@@ -1,0 +1,1247 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>GlowDesk — Panel de gestión</title>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',sans-serif;background:#FAFAFA;color:#1A1A2E;font-size:14px}
+:root{
+  --pk:#C2185B;--pk-d:#880E4F;--pk-l:#FCE4EC;
+  --ma:#7B1FA2;--ma-l:#F3E5F5;
+  --gd:#F57F17;--gd-l:#FFF3E0;
+  --te:#00695C;--te-l:#E0F2F1;
+  --gr:#2E7D32;--gr-l:#E8F5E9;
+  --rd:#C62828;--rd-l:#FFEBEE;
+  --gy:#F5F5F5;--gy-t:#616161;--gy-d:#333;
+  --border:#E0E0E0;--surface:#fff;--bg:#FAFAFA;
+  --radius:10px;--radius-sm:6px;
+}
+.app{display:flex;height:100vh;overflow:hidden}
+.sidebar{width:210px;flex-shrink:0;border-right:1px solid var(--border);display:flex;flex-direction:column;background:var(--surface)}
+.logo{padding:18px 16px;font-size:17px;font-weight:600;color:var(--pk);border-bottom:1px solid var(--border);display:flex;align-items:center;gap:8px}
+.logo-sub{font-size:11px;color:var(--gy-t);font-weight:400;display:block;margin-top:1px}
+.trial-banner{margin:10px 10px 0;background:var(--gd-l);border:1px solid var(--gd);border-radius:var(--radius-sm);padding:8px 10px;font-size:11px;color:#5D4037}
+.trial-banner strong{display:block;color:var(--gd);margin-bottom:2px}
+.nav{flex:1;padding:8px 0;overflow-y:auto}
+.nav-section{font-size:10px;font-weight:600;color:var(--gy-t);padding:10px 16px 4px;text-transform:uppercase;letter-spacing:.8px}
+.nav-item{display:flex;align-items:center;gap:9px;padding:8px 16px;font-size:13px;cursor:pointer;color:var(--gy-t);transition:all .1s;border-left:3px solid transparent}
+.nav-item:hover{background:var(--gy);color:#1A1A2E}
+.nav-item.active{background:var(--pk-l);color:var(--pk);font-weight:500;border-left-color:var(--pk)}
+.nav-icon{font-size:15px;width:18px;text-align:center}
+.sidebar-footer{padding:12px 16px;border-top:1px solid var(--border)}
+.sidebar-plan{font-size:11px;color:var(--gy-t);background:var(--ma-l);padding:6px 10px;border-radius:var(--radius-sm);text-align:center;cursor:pointer}
+.sidebar-plan span{color:var(--ma);font-weight:600}
+.main{flex:1;display:flex;flex-direction:column;overflow:hidden}
+.topbar{height:52px;border-bottom:1px solid var(--border);display:flex;align-items:center;padding:0 20px;gap:12px;flex-shrink:0;background:var(--surface)}
+.topbar-left{font-size:15px;font-weight:500;color:#1A1A2E}
+.topbar-search{flex:1;max-width:320px;height:32px;background:var(--gy);border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px 0 32px;font-size:13px;color:#1A1A2E;outline:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='14' height='14' viewBox='0 0 24 24' fill='none' stroke='%23999' stroke-width='2'%3E%3Ccircle cx='11' cy='11' r='8'/%3E%3Cpath d='m21 21-4.35-4.35'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:10px center}
+.topbar-right{display:flex;align-items:center;gap:8px;margin-left:auto}
+.topbar-btn{height:32px;padding:0 10px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;font-size:12px;color:var(--gy-t);display:flex;align-items:center;gap:5px;position:relative;transition:background .1s}
+.topbar-btn:hover{background:var(--gy)}
+.notif-badge{position:absolute;top:-5px;right:-5px;background:var(--pk);color:#fff;font-size:9px;width:16px;height:16px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:600;border:2px solid var(--surface)}
+.avatar-btn{width:32px;height:32px;border-radius:50%;background:var(--pk-l);color:var(--pk);font-size:12px;font-weight:600;display:flex;align-items:center;justify-content:center;cursor:pointer;border:1px solid var(--border)}
+.content{flex:1;overflow-y:auto;padding:20px}
+.page{display:none}
+.page.active{display:block}
+
+/* COMPONENTS */
+.stats-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin-bottom:20px}
+.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px}
+.stat-label{font-size:11px;color:var(--gy-t);margin-bottom:6px;font-weight:500;text-transform:uppercase;letter-spacing:.5px}
+.stat-value{font-size:24px;font-weight:600;color:#1A1A2E;line-height:1}
+.stat-delta{font-size:11px;margin-top:5px}
+.delta-up{color:var(--gr)}
+.delta-down{color:var(--rd)}
+.section-title{font-size:12px;font-weight:600;color:var(--gy-t);margin-bottom:10px;text-transform:uppercase;letter-spacing:.5px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.card-header{padding:14px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between}
+.card-title{font-size:14px;font-weight:600;color:#1A1A2E}
+.card-body{padding:16px}
+.btn{height:34px;padding:0 14px;border-radius:var(--radius-sm);font-size:13px;cursor:pointer;display:inline-flex;align-items:center;gap:6px;transition:all .1s;font-weight:500;border:1px solid}
+.btn-primary{background:var(--pk);color:#fff;border-color:var(--pk)}
+.btn-primary:hover{background:var(--pk-d);border-color:var(--pk-d)}
+.btn-secondary{background:var(--surface);color:var(--gy-t);border-color:var(--border)}
+.btn-secondary:hover{background:var(--gy)}
+.btn-sm{height:28px;padding:0 10px;font-size:12px}
+.btn-danger{background:var(--rd-l);color:var(--rd);border-color:var(--rd)}
+
+/* STATUS BADGES */
+.badge{font-size:11px;padding:3px 9px;border-radius:12px;font-weight:500;display:inline-flex;align-items:center;gap:4px}
+.badge::before{content:'';width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.badge-confirmed{background:#E8F5E9;color:#1B5E20}.badge-confirmed::before{background:#2E7D32}
+.badge-pending{background:#FFF8E1;color:#E65100}.badge-pending::before{background:#F57F17}
+.badge-completed{background:#E3F2FD;color:#0D47A1}.badge-completed::before{background:#1976D2}
+.badge-noshowed{background:var(--rd-l);color:var(--rd)}.badge-noshowed::before{background:var(--rd)}
+.badge-cancelled{background:var(--gy);color:var(--gy-t)}.badge-cancelled::before{background:#999}
+.tag{font-size:11px;padding:2px 8px;border-radius:10px;font-weight:500}
+.tag-nueva{background:#E3F2FD;color:#0D47A1}
+.tag-regular{background:#E8F5E9;color:#1B5E20}
+.tag-vip{background:#FFF8E1;color:#E65100}
+.tag-noshower{background:var(--rd-l);color:var(--rd)}
+.tag-bloqueada{background:var(--gy);color:var(--gy-t)}
+
+/* AGENDA */
+.agenda-toolbar{display:flex;align-items:center;gap:10px;margin-bottom:16px}
+.week-nav{display:flex;align-items:center;gap:6px}
+.week-btn{width:28px;height:28px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:14px;color:var(--gy-t)}
+.week-label{font-size:14px;font-weight:600;color:#1A1A2E;min-width:180px}
+.view-toggle{display:flex;border:1px solid var(--border);border-radius:var(--radius-sm);overflow:hidden}
+.view-btn{padding:5px 12px;font-size:12px;cursor:pointer;color:var(--gy-t);background:var(--surface);border:none}
+.view-btn.active{background:var(--pk);color:#fff}
+.cal-grid{display:grid;grid-template-columns:50px repeat(7,minmax(0,1fr));border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+.cal-head{padding:8px 6px;text-align:center;font-size:12px;font-weight:500;background:#FAFAFA;border-bottom:1px solid var(--border);color:var(--gy-t)}
+.cal-head.today{color:var(--pk);font-weight:600}
+.cal-time{font-size:10px;color:#bbb;padding:0 6px;border-right:1px solid var(--border);border-bottom:1px solid var(--border);background:#FAFAFA;text-align:right;line-height:32px}
+.cal-cell{border-right:1px solid var(--border);border-bottom:1px solid var(--border);height:32px;position:relative;cursor:pointer}
+.cal-cell:hover{background:rgba(194,24,91,.04)}
+.cal-appt{position:absolute;inset:1px;border-radius:4px;padding:2px 5px;font-size:10px;color:#fff;font-weight:500;overflow:hidden;white-space:nowrap;text-overflow:ellipsis;cursor:pointer;z-index:1}
+
+/* CLIENTES */
+.client-filters{display:flex;gap:6px;margin-bottom:14px;flex-wrap:wrap}
+.filter-pill{padding:5px 12px;border-radius:14px;font-size:12px;cursor:pointer;border:1px solid var(--border);color:var(--gy-t);background:var(--surface);transition:all .1s}
+.filter-pill:hover{border-color:var(--pk);color:var(--pk)}
+.filter-pill.active{background:var(--pk);color:#fff;border-color:var(--pk)}
+.client-list{display:flex;flex-direction:column;gap:8px}
+.client-row{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .1s}
+.client-row:hover{border-color:var(--pk);box-shadow:0 2px 8px rgba(194,24,91,.08)}
+.avatar{width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:14px;font-weight:600;flex-shrink:0}
+.client-info{flex:1;min-width:0}
+.client-name{font-size:14px;font-weight:500;color:#1A1A2E}
+.client-meta{font-size:12px;color:var(--gy-t);margin-top:1px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.maint{font-size:11px;padding:2px 8px;border-radius:10px;flex-shrink:0}
+.maint-ok{background:var(--gr-l);color:#1B5E20}
+.maint-soon{background:var(--gd-l);color:#E65100}
+.maint-overdue{background:var(--rd-l);color:var(--rd)}
+
+/* FICHA CLIENTA */
+.profile-hero{display:flex;align-items:flex-start;gap:16px;margin-bottom:20px;padding-bottom:20px;border-bottom:1px solid var(--border)}
+.avatar-xl{width:64px;height:64px;border-radius:50%;font-size:22px;display:flex;align-items:center;justify-content:center;font-weight:600;flex-shrink:0}
+.profile-name{font-size:18px;font-weight:600;color:#1A1A2E;margin-bottom:4px}
+.profile-meta{font-size:13px;color:var(--gy-t);margin-bottom:8px}
+.profile-stats{display:flex;gap:16px}
+.profile-stat{font-size:12px;color:var(--gy-t)}
+.profile-stat strong{color:#1A1A2E;font-weight:600}
+.profile-actions{display:flex;gap:8px;margin-left:auto;flex-shrink:0}
+.tabs{display:flex;border-bottom:1px solid var(--border);margin-bottom:16px;gap:0}
+.tab{padding:9px 16px;font-size:13px;cursor:pointer;color:var(--gy-t);border-bottom:2px solid transparent;margin-bottom:-1px;transition:all .1s}
+.tab:hover{color:#1A1A2E}
+.tab.active{color:var(--pk);border-bottom-color:var(--pk);font-weight:500}
+.tab-panel{display:none}
+.tab-panel.active{display:block}
+.form-row{display:grid;grid-template-columns:120px 1fr;gap:8px;align-items:start;margin-bottom:12px}
+.form-label{font-size:12px;color:var(--gy-t);padding-top:6px;font-weight:500}
+.editable-field{padding:5px 8px;border:1px solid transparent;border-radius:var(--radius-sm);font-size:13px;color:#1A1A2E;cursor:text;transition:border .1s}
+.editable-field:hover{border-color:var(--border);background:var(--gy)}
+.editable-field:focus{border-color:var(--pk);outline:none;background:var(--surface)}
+textarea.editable-field{width:100%;min-height:72px;resize:vertical;font-family:inherit}
+.history-row{padding:12px 0;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:12px}
+.history-row:last-child{border-bottom:none}
+.history-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.history-info{flex:1}
+.history-date{font-size:11px;color:var(--gy-t)}
+.history-service{font-size:13px;font-weight:500;color:#1A1A2E}
+.history-amount{font-size:12px;color:var(--gr);font-weight:500}
+.photo-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:8px}
+.photo-cell{aspect-ratio:1;border-radius:var(--radius-sm);background:var(--gy);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:28px;cursor:pointer;overflow:hidden;transition:all .1s}
+.photo-cell:hover{border-color:var(--pk)}
+
+/* SERVICIOS */
+.service-item{display:flex;align-items:center;gap:12px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;transition:all .1s}
+.service-item:hover{border-color:var(--pk)}
+.svc-bar{width:5px;height:44px;border-radius:3px;flex-shrink:0}
+.svc-info{flex:1}
+.svc-name{font-size:14px;font-weight:500;color:#1A1A2E}
+.svc-meta{font-size:12px;color:var(--gy-t);margin-top:2px}
+.svc-price{font-size:16px;font-weight:600;color:#1A1A2E;min-width:80px;text-align:right}
+.toggle{width:36px;height:20px;background:var(--border);border-radius:10px;position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.toggle.on{background:var(--pk)}
+.toggle::after{content:'';position:absolute;width:16px;height:16px;background:#fff;border-radius:50%;top:2px;left:2px;transition:left .2s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
+.toggle.on::after{left:18px}
+.svc-actions{display:flex;gap:6px;align-items:center}
+
+/* INGRESOS */
+.period-tabs{display:flex;gap:6px;margin-bottom:16px}
+.period-tab{padding:6px 14px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:12px;cursor:pointer;color:var(--gy-t);background:var(--surface);transition:all .1s}
+.period-tab.active{background:var(--pk);color:#fff;border-color:var(--pk)}
+.chart-wrap{display:flex;align-items:flex-end;gap:4px;height:140px;padding-bottom:4px;margin-bottom:4px}
+.bar-col{display:flex;flex-direction:column;align-items:center;gap:3px;flex:1}
+.bar-rect{border-radius:4px 4px 0 0;width:100%;min-height:4px;cursor:pointer;transition:opacity .1s}
+.bar-rect:hover{opacity:.75}
+.bar-lbl{font-size:9px;color:var(--gy-t)}
+.income-table{width:100%;border-collapse:collapse;font-size:13px}
+.income-table th{text-align:left;color:var(--gy-t);font-size:11px;font-weight:600;padding:8px 10px;border-bottom:1px solid var(--border);text-transform:uppercase;letter-spacing:.5px}
+.income-table td{padding:10px 10px;border-bottom:1px solid var(--border);color:#1A1A2E}
+.income-table tbody tr:hover td{background:var(--gy)}
+.income-table tbody tr:last-child td{border-bottom:none}
+
+/* MI PAGINA */
+.page-editor{display:grid;grid-template-columns:1fr 320px;gap:16px}
+.page-form .form-group{margin-bottom:14px}
+.page-form label{font-size:12px;color:var(--gy-t);font-weight:500;display:block;margin-bottom:5px}
+.page-form input,.page-form textarea,.page-form select{width:100%;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;font-size:13px;outline:none;color:#1A1A2E;background:var(--surface);font-family:inherit;transition:border .1s}
+.page-form input:focus,.page-form textarea:focus{border-color:var(--pk)}
+.page-form textarea{height:70px;padding:8px 12px;resize:vertical}
+.page-preview-wrap{border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:sticky;top:0}
+.preview-cover{height:90px;background:linear-gradient(135deg,var(--pk),var(--ma));position:relative}
+.preview-avatar{width:52px;height:52px;border-radius:50%;background:#fff;position:absolute;bottom:-26px;left:16px;display:flex;align-items:center;justify-content:center;font-size:22px;border:3px solid #fff}
+.preview-body{padding:32px 16px 16px}
+.preview-name{font-size:15px;font-weight:600;margin-bottom:2px}
+.preview-spec{font-size:12px;color:var(--gy-t);margin-bottom:10px}
+.preview-svc{padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);margin-bottom:6px;display:flex;align-items:center;justify-content:space-between}
+.preview-svc-name{font-size:12px;font-weight:500}
+.preview-svc-meta{font-size:11px;color:var(--gy-t)}
+.preview-svc-price{font-size:13px;font-weight:600;color:var(--pk)}
+.preview-book-btn{width:100%;margin-top:10px;padding:9px;background:var(--pk);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-weight:500;cursor:pointer}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid var(--border)}
+.toggle-row:last-child{border-bottom:none}
+.toggle-info .toggle-title{font-size:13px;font-weight:500;color:#1A1A2E}
+.toggle-info .toggle-desc{font-size:11px;color:var(--gy-t);margin-top:2px}
+
+/* CONFIGURACION */
+.config-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.config-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;cursor:pointer;transition:all .1s}
+.config-card:hover{border-color:var(--pk);box-shadow:0 2px 8px rgba(194,24,91,.1)}
+.config-card-icon{font-size:22px;margin-bottom:10px}
+.config-card-title{font-size:14px;font-weight:600;margin-bottom:3px}
+.config-card-desc{font-size:12px;color:var(--gy-t)}
+.config-section{display:none}
+.config-section.active{display:block}
+.back-link{display:flex;align-items:center;gap:5px;color:var(--pk);font-size:13px;cursor:pointer;margin-bottom:16px;font-weight:500}
+.back-link:hover{opacity:.8}
+.form-group{margin-bottom:14px}
+.form-group label{font-size:12px;color:var(--gy-t);font-weight:500;display:block;margin-bottom:5px}
+.form-group input,.form-group select,.form-group textarea{width:100%;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px;font-size:13px;outline:none;color:#1A1A2E;background:var(--surface);font-family:inherit;transition:border .1s}
+.form-group input:focus,.form-group select:focus{border-color:var(--pk)}
+.payment-block{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.payment-block-header{display:flex;align-items:center;gap:10px;margin-bottom:8px}
+.payment-logo{width:32px;height:32px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:700;color:#fff;flex-shrink:0}
+.payment-name{font-size:14px;font-weight:600}
+.connected-pill{background:var(--gr-l);color:var(--gr);font-size:11px;font-weight:500;padding:3px 9px;border-radius:10px;margin-left:auto}
+.avail-row{display:flex;align-items:center;gap:10px;margin-bottom:10px;padding:8px 12px;background:var(--gy);border-radius:var(--radius-sm)}
+.avail-day{font-size:12px;font-weight:500;width:50px;color:#1A1A2E}
+.avail-select{height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 8px;font-size:12px;color:#1A1A2E;background:var(--surface);outline:none;width:90px}
+.plan-cards{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-bottom:16px}
+.plan-card{border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center;transition:all .1s}
+.plan-card.current{border:2px solid var(--pk);background:var(--pk-l)}
+.plan-card.recommended{border:2px solid var(--ma)}
+.plan-name{font-size:14px;font-weight:600;margin-bottom:6px}
+.plan-price{font-size:26px;font-weight:700;color:var(--pk);line-height:1}
+.plan-period{font-size:11px;color:var(--gy-t);margin-bottom:12px}
+.plan-features{font-size:11px;color:var(--gy-t);text-align:left;margin-bottom:14px;display:flex;flex-direction:column;gap:4px}
+.plan-features li{list-style:none;display:flex;gap:5px}
+
+/* RESERVA PUBLICA */
+.public-page{max-width:480px;margin:0 auto}
+.pub-hero{background:linear-gradient(135deg,var(--pk),var(--ma));border-radius:var(--radius);padding:28px 20px;text-align:center;color:#fff;margin-bottom:20px}
+.pub-avatar{width:64px;height:64px;border-radius:50%;background:rgba(255,255,255,.2);display:flex;align-items:center;justify-content:center;font-size:28px;margin:0 auto 10px}
+.pub-name{font-size:18px;font-weight:600;margin-bottom:3px}
+.pub-spec{font-size:13px;opacity:.85;margin-bottom:8px}
+.pub-rating{font-size:12px;opacity:.9}
+.svc-book-card{display:flex;align-items:center;gap:12px;padding:14px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;cursor:pointer;transition:all .1s}
+.svc-book-card:hover{border-color:var(--pk);box-shadow:0 2px 8px rgba(194,24,91,.1)}
+.svc-book-card.selected{border-color:var(--pk);background:var(--pk-l)}
+.sbc-bar{width:5px;height:40px;border-radius:3px;flex-shrink:0}
+.sbc-info{flex:1}
+.sbc-name{font-size:14px;font-weight:500;color:#1A1A2E}
+.sbc-meta{font-size:12px;color:var(--gy-t)}
+.sbc-price{font-size:16px;font-weight:700;color:var(--pk)}
+.step-bar{display:flex;align-items:center;gap:8px;margin-bottom:20px}
+.step-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;flex-shrink:0;border:2px solid var(--border);color:var(--gy-t)}
+.step-dot.active{border-color:var(--pk);color:var(--pk)}
+.step-dot.done{background:var(--pk);border-color:var(--pk);color:#fff}
+.step-line{flex:1;height:2px;background:var(--border);border-radius:1px}
+.step-line.done{background:var(--pk)}
+.mini-cal{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:4px;margin-bottom:14px}
+.mini-cal-hdr{text-align:center;font-size:10px;color:var(--gy-t);font-weight:600;padding:2px}
+.mini-cal-day{aspect-ratio:1;display:flex;align-items:center;justify-content:center;font-size:12px;border-radius:50%;cursor:pointer;transition:all .1s;color:var(--gy-t)}
+.mini-cal-day.avail{color:#1A1A2E;cursor:pointer}
+.mini-cal-day.avail:hover{background:var(--pk-l);color:var(--pk)}
+.mini-cal-day.selected{background:var(--pk);color:#fff;font-weight:600}
+.mini-cal-day.disabled{color:#ccc;cursor:default}
+.time-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:6px;margin-bottom:14px}
+.time-btn{padding:8px;border:1px solid var(--border);border-radius:var(--radius-sm);text-align:center;font-size:13px;cursor:pointer;transition:all .1s;color:#1A1A2E;background:var(--surface)}
+.time-btn:hover{border-color:var(--pk);color:var(--pk)}
+.time-btn.selected{background:var(--pk);color:#fff;border-color:var(--pk);font-weight:500}
+.time-btn.occupied{background:var(--gy);color:#ccc;cursor:not-allowed}
+.booking-step{display:none}
+.booking-step.active{display:block}
+.confirm-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;margin-bottom:14px}
+.confirm-row{display:flex;justify-content:space-between;align-items:center;padding:6px 0;border-bottom:1px solid var(--border);font-size:13px}
+.confirm-row:last-child{border-bottom:none;font-size:14px;font-weight:600}
+.confirm-row span:first-child{color:var(--gy-t)}
+.payment-methods{display:flex;flex-direction:column;gap:8px;margin-bottom:14px}
+.pay-method{display:flex;align-items:center;gap:12px;padding:14px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;transition:all .1s}
+.pay-method:hover{border-color:var(--pk);background:var(--pk-l)}
+.pay-method-icon{font-size:22px;width:36px;text-align:center}
+.pay-method-info .pay-method-name{font-size:13px;font-weight:500}
+.pay-method-info .pay-method-desc{font-size:11px;color:var(--gy-t)}
+.success-page{text-align:center;padding:30px 20px}
+.success-icon{font-size:56px;margin-bottom:14px;animation:pop .4s ease}
+@keyframes pop{0%{transform:scale(0)}70%{transform:scale(1.1)}100%{transform:scale(1)}}
+.success-title{font-size:20px;font-weight:700;margin-bottom:6px}
+.success-sub{font-size:13px;color:var(--gy-t);margin-bottom:20px}
+.success-card{background:var(--pk-l);border:1px solid var(--pk);border-radius:var(--radius);padding:14px;margin-bottom:20px;text-align:left}
+
+/* MODAL */
+.modal-bg{position:fixed;inset:0;background:rgba(0,0,0,.45);display:none;align-items:center;justify-content:center;z-index:1000;padding:16px}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius);width:100%;max-width:460px;max-height:90vh;overflow-y:auto;box-shadow:0 20px 60px rgba(0,0,0,.2)}
+.modal-head{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;background:var(--surface)}
+.modal-title{font-size:15px;font-weight:600;color:#1A1A2E}
+.modal-close{width:28px;height:28px;border:1px solid var(--border);border-radius:var(--radius-sm);background:none;cursor:pointer;font-size:16px;color:var(--gy-t);display:flex;align-items:center;justify-content:center}
+.modal-close:hover{background:var(--gy)}
+.modal-body{padding:20px}
+.modal-foot{padding:14px 20px;border-top:1px solid var(--border);display:flex;justify-content:flex-end;gap:8px;position:sticky;bottom:0;background:var(--surface)}
+.checkout-method{display:flex;align-items:center;gap:12px;padding:12px 14px;border:1px solid var(--border);border-radius:var(--radius);cursor:pointer;margin-bottom:8px;transition:all .1s}
+.checkout-method:hover{border-color:var(--pk);background:var(--pk-l)}
+.checkout-method-icon{font-size:22px;width:36px;text-align:center}
+.amount-hero{text-align:center;padding:14px;background:var(--pk-l);border-radius:var(--radius);margin-bottom:16px;border:1px solid var(--pk)}
+.amount-hero-label{font-size:12px;color:var(--pk-d);margin-bottom:4px}
+.amount-hero-value{font-size:28px;font-weight:700;color:var(--pk)}
+
+/* TOAST */
+.toast{position:fixed;bottom:20px;right:20px;background:#1B5E20;color:#fff;padding:12px 18px;border-radius:var(--radius);font-size:13px;z-index:9999;opacity:0;transform:translateY(10px);transition:all .3s;pointer-events:none;max-width:340px;box-shadow:0 4px 20px rgba(0,0,0,.2)}
+.toast.show{opacity:1;transform:translateY(0)}
+
+/* NOTIF DROPDOWN */
+.notif-dropdown{position:absolute;top:44px;right:0;width:300px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 32px rgba(0,0,0,.12);z-index:500;display:none}
+.notif-dropdown.open{display:block}
+.notif-item{padding:12px 14px;border-bottom:1px solid var(--border);cursor:pointer;background:var(--pk-l)}
+.notif-item:hover{background:var(--gy)}
+.notif-item.read{background:var(--surface)}
+.notif-item:last-child{border-bottom:none}
+.notif-type{font-size:11px;color:var(--pk);font-weight:600;margin-bottom:2px}
+.notif-msg{font-size:12px;color:#1A1A2E}
+.notif-time{font-size:11px;color:var(--gy-t);margin-top:2px}
+.notif-footer{padding:10px;text-align:center;border-top:1px solid var(--border);font-size:12px;color:var(--pk);cursor:pointer;font-weight:500}
+</style>
+</head>
+<body>
+
+<div class="app">
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="logo">💅 GlowDesk<span class="logo-sub">Panel de gestión</span></div>
+  <div class="trial-banner"><strong>14 días de prueba</strong>Activá tu plan para no perder el acceso</div>
+  <nav class="nav">
+    <div class="nav-section">Principal</div>
+    <div class="nav-item active" onclick="nav('dashboard',this)"><span class="nav-icon">🏠</span>Dashboard</div>
+    <div class="nav-item" onclick="nav('agenda',this)"><span class="nav-icon">📅</span>Agenda</div>
+    <div class="nav-item" onclick="nav('clientes',this)"><span class="nav-icon">👤</span>Clientes</div>
+    <div class="nav-section">Negocio</div>
+    <div class="nav-item" onclick="nav('servicios',this)"><span class="nav-icon">✨</span>Servicios</div>
+    <div class="nav-item" onclick="nav('ingresos',this)"><span class="nav-icon">💰</span>Ingresos</div>
+    <div class="nav-item" onclick="nav('resenas',this)"><span class="nav-icon">⭐</span>Reseñas</div>
+    <div class="nav-section">Presencia</div>
+    <div class="nav-item" onclick="nav('mipagina',this)"><span class="nav-icon">🌐</span>Mi Página</div>
+    <div class="nav-item" onclick="nav('reserva',this)"><span class="nav-icon">🔗</span>Ver reserva (demo)</div>
+    <div class="nav-section">Cuenta</div>
+    <div class="nav-item" onclick="nav('configuracion',this)"><span class="nav-icon">⚙️</span>Configuración</div>
+  </nav>
+  <div class="sidebar-footer">
+    <div class="sidebar-plan" onclick="nav('configuracion',null);setTimeout(()=>showConfig('plan'),100)">Plan <span>Pro — $49/mes</span></div>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-left" id="topbar-title">Dashboard</div>
+    <input class="topbar-search" type="text" placeholder="Buscar clientas, turnos..." oninput="globalSearch(this.value)">
+    <div class="topbar-right">
+      <div style="position:relative">
+        <button class="topbar-btn" onclick="toggleNotif()">🔔 <span style="font-size:12px">Notificaciones</span><span class="notif-badge">3</span></button>
+        <div class="notif-dropdown" id="notif-dd">
+          <div class="notif-item"><div class="notif-type">Nuevo turno</div><div class="notif-msg">Valentina López reservó uñas gel para el lunes</div><div class="notif-time">hace 10 min</div></div>
+          <div class="notif-item"><div class="notif-type">No-show</div><div class="notif-msg">Ana Pérez no se presentó al turno de las 11:00</div><div class="notif-time">hace 2 horas</div></div>
+          <div class="notif-item read"><div class="notif-type">Reseña nueva</div><div class="notif-msg">Camila Ruiz te dejó una reseña de 5 estrellas</div><div class="notif-time">ayer</div></div>
+          <div class="notif-footer" onclick="toggleNotif()">Ver todas las notificaciones</div>
+        </div>
+      </div>
+      <button class="topbar-btn" onclick="cycleLang()">🌍 <span id="lang-label">ES</span></button>
+      <div class="avatar-btn" title="María García" onclick="nav('configuracion',null);setTimeout(()=>showConfig('cuenta'),100)">MG</div>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div style="margin-bottom:20px"><div style="font-size:20px;font-weight:600">Buenos días, María 👋</div><div style="font-size:13px;color:var(--gy-t);margin-top:4px">Lunes, 14 de abril de 2026</div></div>
+      <div style="background:var(--gd-l);border:1px solid var(--gd);border-radius:var(--radius);padding:12px 16px;margin-bottom:16px;display:flex;align-items:center;gap:10px">
+        <span style="font-size:18px">⚠️</span>
+        <div style="flex:1;font-size:13px;color:#5D4037">Sofía Martínez tiene turno a las 14:00 sin seña confirmada</div>
+        <button class="btn btn-sm btn-secondary" onclick="openCheckout('Sofía Martínez','Diseño de cejas','$450','$1.050')">Ver turno</button>
+      </div>
+      <div class="stats-grid">
+        <div class="stat-card"><div class="stat-label">Ingresos del mes</div><div class="stat-value">$84.200</div><div class="stat-delta delta-up">↑ +12% vs marzo</div></div>
+        <div class="stat-card"><div class="stat-label">Turnos realizados</div><div class="stat-value">42</div><div class="stat-delta delta-up">↑ +5 vs marzo</div></div>
+        <div class="stat-card"><div class="stat-label">No-shows</div><div class="stat-value">2</div><div class="stat-delta delta-down">↑ 4.7% del total</div></div>
+        <div class="stat-card"><div class="stat-label">Clientas nuevas</div><div class="stat-value">7</div><div class="stat-delta delta-up">↑ +3 vs marzo</div></div>
+      </div>
+      <div class="section-title">Turnos de hoy — 14 de abril</div>
+      <div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">
+        <div class="client-row" onclick="openCheckout('Valentina López','Uñas gel color','$600','$1.400')">
+          <div style="width:5px;height:44px;border-radius:3px;background:var(--pk);flex-shrink:0"></div>
+          <div class="avatar" style="background:var(--pk-l);color:var(--pk)">VL</div>
+          <div class="client-info"><div class="client-name">Valentina López</div><div class="client-meta">Uñas gel color · 60min</div></div>
+          <div style="font-size:13px;color:var(--gy-t);margin-right:10px">10:00</div>
+          <span class="badge badge-confirmed">Confirmado</span>
+          <button class="btn btn-sm btn-primary" style="margin-left:8px" onclick="event.stopPropagation();openCheckout('Valentina López','Uñas gel color','$600','$1.400')">Completar</button>
+        </div>
+        <div class="client-row" onclick="openCheckout('Camila Ruiz','Extensión pestañas','$780','$1.820')">
+          <div style="width:5px;height:44px;border-radius:3px;background:var(--ma);flex-shrink:0"></div>
+          <div class="avatar" style="background:var(--ma-l);color:var(--ma)">CR</div>
+          <div class="client-info"><div class="client-name">Camila Ruiz</div><div class="client-meta">Extensión pestañas clásica · 90min</div></div>
+          <div style="font-size:13px;color:var(--gy-t);margin-right:10px">11:30</div>
+          <span class="badge badge-confirmed">Confirmado</span>
+          <button class="btn btn-sm btn-primary" style="margin-left:8px" onclick="event.stopPropagation();openCheckout('Camila Ruiz','Extensión pestañas','$780','$1.820')">Completar</button>
+        </div>
+        <div class="client-row">
+          <div style="width:5px;height:44px;border-radius:3px;background:var(--gd);flex-shrink:0"></div>
+          <div class="avatar" style="background:var(--gd-l);color:var(--gd)">SM</div>
+          <div class="client-info"><div class="client-name">Sofía Martínez</div><div class="client-meta">Diseño de cejas · 45min</div></div>
+          <div style="font-size:13px;color:var(--gy-t);margin-right:10px">14:00</div>
+          <span class="badge badge-pending">Sin seña</span>
+        </div>
+        <div class="client-row" onclick="openCheckout('Lucía Fernández','Limpieza facial','$375','$875')">
+          <div style="width:5px;height:44px;border-radius:3px;background:var(--te);flex-shrink:0"></div>
+          <div class="avatar" style="background:var(--te-l);color:var(--te)">LF</div>
+          <div class="client-info"><div class="client-name">Lucía Fernández</div><div class="client-meta">Limpieza facial · 60min</div></div>
+          <div style="font-size:13px;color:var(--gy-t);margin-right:10px">16:00</div>
+          <span class="badge badge-confirmed">Confirmado</span>
+          <button class="btn btn-sm btn-primary" style="margin-left:8px" onclick="event.stopPropagation();openCheckout('Lucía Fernández','Limpieza facial','$375','$875')">Completar</button>
+        </div>
+      </div>
+      <div class="section-title">Clientas que necesitan turno pronto</div>
+      <div class="card" style="margin-bottom:20px">
+        <div class="card-body" style="padding:12px 16px">
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0;border-bottom:1px solid var(--border)"><div class="avatar" style="width:32px;height:32px;font-size:12px;background:var(--pk-l);color:var(--pk)">LF</div><div style="flex:1"><div style="font-size:13px;font-weight:500">Lucía Fernández</div><div style="font-size:11px;color:var(--gy-t)">Le toca limpieza facial en 3 días</div></div><button class="btn btn-sm btn-secondary" onclick="nav('agenda',null)">Agendar</button></div>
+          <div style="display:flex;align-items:center;gap:10px;padding:8px 0"><div class="avatar" style="width:32px;height:32px;font-size:12px;background:var(--rd-l);color:var(--rd)">AP</div><div style="flex:1"><div style="font-size:13px;font-weight:500">Ana Pérez</div><div style="font-size:11px;color:var(--rd)">Mantenimiento vencido hace 5 días</div></div><button class="btn btn-sm btn-secondary" onclick="nav('agenda',null)">Agendar</button></div>
+        </div>
+      </div>
+      <div class="section-title">Acciones rápidas</div>
+      <div style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px">
+        <button class="btn btn-primary" style="flex-direction:column;height:64px;gap:4px" onclick="openModal('newappt-modal')"><span style="font-size:20px">📅</span><span style="font-size:11px">Nuevo turno</span></button>
+        <button class="btn btn-secondary" style="flex-direction:column;height:64px;gap:4px" onclick="openModal('newclient-modal')"><span style="font-size:20px">👤</span><span style="font-size:11px">Nueva clienta</span></button>
+        <button class="btn btn-secondary" style="flex-direction:column;height:64px;gap:4px" onclick="nav('agenda',document.querySelector('.nav-item:nth-child(3)'))"><span style="font-size:20px">📋</span><span style="font-size:11px">Ver agenda</span></button>
+        <button class="btn btn-secondary" style="flex-direction:column;height:64px;gap:4px" onclick="copyLink()"><span style="font-size:20px">🔗</span><span style="font-size:11px">Mi link</span></button>
+      </div>
+    </div>
+
+    <!-- AGENDA -->
+    <div class="page" id="page-agenda">
+      <div class="agenda-toolbar">
+        <div class="week-nav"><button class="week-btn">‹</button><div class="week-label">14 – 20 de abril, 2026</div><button class="week-btn">›</button></div>
+        <div class="view-toggle"><button class="view-btn active">Semana</button><button class="view-btn">Día</button></div>
+        <button class="btn btn-primary btn-sm" style="margin-left:auto" onclick="openModal('newappt-modal')">+ Nuevo turno</button>
+      </div>
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+
+    <!-- CLIENTES -->
+    <div class="page" id="page-clientes">
+      <div id="clientes-list-view">
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+          <input style="flex:1;height:36px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 12px 0 36px;font-size:13px;outline:none;background:var(--gy) url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%2214%22 height=%2214%22 viewBox=%220 0 24 24%22 fill=%22none%22 stroke=%22%23999%22 stroke-width=%222%22%3E%3Ccircle cx=%2211%22 cy=%2211%22 r=%228%22/%3E%3Cpath d=%22m21 21-4.35-4.35%22/%3E%3C/svg%3E') no-repeat 12px center;" type="text" placeholder="Buscar por nombre o teléfono..." oninput="filterClients(this.value)">
+          <button class="btn btn-primary" onclick="openModal('newclient-modal')">+ Nueva clienta</button>
+        </div>
+        <div class="client-filters" id="client-filters">
+          <div class="filter-pill active" onclick="setClientFilter('todas',this)">Todas (5)</div>
+          <div class="filter-pill" onclick="setClientFilter('nueva',this)">Nueva</div>
+          <div class="filter-pill" onclick="setClientFilter('regular',this)">Regular</div>
+          <div class="filter-pill" onclick="setClientFilter('vip',this)">VIP</div>
+          <div class="filter-pill" onclick="setClientFilter('noshower',this)">No-show</div>
+        </div>
+        <div class="client-list" id="clients-list"></div>
+      </div>
+      <div id="client-detail" style="display:none"></div>
+    </div>
+
+    <!-- SERVICIOS -->
+    <div class="page" id="page-servicios">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+        <div><div style="font-size:16px;font-weight:600">Mis servicios</div><div style="font-size:12px;color:var(--gy-t);margin-top:2px">Arrastrá para reordenar</div></div>
+        <button class="btn btn-primary" onclick="openModal('service-modal')">+ Agregar servicio</button>
+      </div>
+      <div id="services-list"></div>
+    </div>
+
+    <!-- INGRESOS -->
+    <div class="page" id="page-ingresos">
+      <div style="font-size:16px;font-weight:600;margin-bottom:16px">Ingresos</div>
+      <div class="stats-grid" style="margin-bottom:16px">
+        <div class="stat-card"><div class="stat-label">Total cobrado</div><div class="stat-value">$84.200</div><div class="stat-delta delta-up">↑ +12% vs mes anterior</div></div>
+        <div class="stat-card"><div class="stat-label">Turnos completados</div><div class="stat-value">42</div></div>
+        <div class="stat-card"><div class="stat-label">Ticket promedio</div><div class="stat-value">$2.005</div></div>
+        <div class="stat-card"><div class="stat-label">Tasa de no-shows</div><div class="stat-value">4.7%</div><div class="stat-delta delta-down">↑ 2 no-shows</div></div>
+      </div>
+      <div class="period-tabs">
+        <div class="period-tab active">Este mes</div>
+        <div class="period-tab">Esta semana</div>
+        <div class="period-tab">Mes anterior</div>
+        <div class="period-tab">3 meses</div>
+      </div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-header"><div class="card-title">Ingresos por día — Abril 2026</div><button class="btn btn-sm btn-secondary" onclick="toast('CSV descargado ✓')">Exportar CSV</button></div>
+        <div class="card-body"><div class="chart-wrap" id="income-chart"></div><div style="display:flex;justify-content:space-between;font-size:10px;color:var(--gy-t);padding:0 2px" id="chart-labels"></div></div>
+      </div>
+      <div class="card">
+        <div class="card-header"><div class="card-title">Ingresos por servicio</div></div>
+        <div class="card-body" style="padding:0">
+          <table class="income-table">
+            <thead><tr><th>Servicio</th><th>Turnos</th><th>Total generado</th><th>% del total</th></tr></thead>
+            <tbody>
+              <tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--pk);margin-right:8px;vertical-align:middle"></span>Uñas gel color</td><td>18</td><td style="color:var(--gr);font-weight:600">$36.000</td><td><div style="background:var(--pk);height:6px;border-radius:3px;width:43%"></div> 43%</td></tr>
+              <tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--ma);margin-right:8px;vertical-align:middle"></span>Extensión pestañas</td><td>12</td><td style="color:var(--gr);font-weight:600">$31.200</td><td><div style="background:var(--ma);height:6px;border-radius:3px;width:37%"></div> 37%</td></tr>
+              <tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--gd);margin-right:8px;vertical-align:middle"></span>Diseño de cejas</td><td>8</td><td style="color:var(--gr);font-weight:600">$12.000</td><td><div style="background:var(--gd);height:6px;border-radius:3px;width:14%"></div> 14%</td></tr>
+              <tr><td><span style="display:inline-block;width:10px;height:10px;border-radius:50%;background:var(--te);margin-right:8px;vertical-align:middle"></span>Limpieza facial</td><td>4</td><td style="color:var(--gr);font-weight:600">$5.000</td><td><div style="background:var(--te);height:6px;border-radius:3px;width:6%"></div> 6%</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESEÑAS -->
+    <div class="page" id="page-resenas">
+      <div style="font-size:16px;font-weight:600;margin-bottom:16px">Reseñas</div>
+      <div class="card" style="margin-bottom:16px">
+        <div class="card-body" style="display:flex;align-items:center;gap:24px">
+          <div style="text-align:center"><div style="font-size:40px;font-weight:700;color:var(--pk)">4.8</div><div style="font-size:14px">⭐⭐⭐⭐⭐</div><div style="font-size:12px;color:var(--gy-t);margin-top:4px">23 reseñas</div></div>
+          <div style="flex:1"><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:12px;width:20px">5⭐</span><div style="flex:1;height:8px;background:var(--gy);border-radius:4px;overflow:hidden"><div style="width:70%;height:100%;background:var(--pk);border-radius:4px"></div></div><span style="font-size:12px;color:var(--gy-t)">16</span></div><div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="font-size:12px;width:20px">4⭐</span><div style="flex:1;height:8px;background:var(--gy);border-radius:4px;overflow:hidden"><div style="width:22%;height:100%;background:var(--pk);border-radius:4px"></div></div><span style="font-size:12px;color:var(--gy-t)">5</span></div><div style="display:flex;align-items:center;gap:8px"><span style="font-size:12px;width:20px">3⭐</span><div style="flex:1;height:8px;background:var(--gy);border-radius:4px;overflow:hidden"><div style="width:8%;height:100%;background:var(--pk);border-radius:4px"></div></div><span style="font-size:12px;color:var(--gy-t)">2</span></div></div>
+        </div>
+      </div>
+      <div class="client-list">
+        <div class="card"><div class="card-body"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div class="avatar" style="width:36px;height:36px;font-size:13px;background:var(--pk-l);color:var(--pk)">VL</div><div style="flex:1"><div style="font-size:13px;font-weight:500">Valentina López</div><div style="font-size:11px;color:var(--gy-t)">Uñas gel color · 10 abr 2026</div></div><div style="font-size:18px">⭐⭐⭐⭐⭐</div><div class="toggle on" style="margin-left:8px" title="Visible en página pública"></div></div><div style="font-size:13px;color:#1A1A2E">"Increíble trabajo, como siempre. La mejor nailista de Bahía Blanca sin dudas. 💅"</div></div></div>
+        <div class="card"><div class="card-body"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div class="avatar" style="width:36px;height:36px;font-size:13px;background:var(--ma-l);color:var(--ma)">CR</div><div style="flex:1"><div style="font-size:13px;font-weight:500">Camila Ruiz</div><div style="font-size:11px;color:var(--gy-t)">Extensión pestañas · 7 abr 2026</div></div><div style="font-size:18px">⭐⭐⭐⭐⭐</div><div class="toggle on" style="margin-left:8px"></div></div><div style="font-size:13px;color:#1A1A2E">"Las pestañas quedaron perfectas. Me duran mucho más que con otras profesionales. Muy recomendable!"</div></div></div>
+        <div class="card"><div class="card-body"><div style="display:flex;align-items:center;gap:10px;margin-bottom:8px"><div class="avatar" style="width:36px;height:36px;font-size:13px;background:var(--te-l);color:var(--te)">LF</div><div style="flex:1"><div style="font-size:13px;font-weight:500">Lucía Fernández</div><div style="font-size:11px;color:var(--gy-t)">Limpieza facial · 1 abr 2026</div></div><div style="font-size:18px">⭐⭐⭐⭐</div><div class="toggle" style="margin-left:8px"></div></div><div style="font-size:13px;color:#1A1A2E">"Muy buena atención y el resultado es notorio. Volvería sin dudarlo."</div></div></div>
+      </div>
+    </div>
+
+    <!-- MI PAGINA -->
+    <div class="page" id="page-mipagina">
+      <div style="font-size:16px;font-weight:600;margin-bottom:16px">Mi página pública</div>
+      <div class="page-editor">
+        <div>
+          <div class="card" style="margin-bottom:12px">
+            <div class="card-header"><div class="card-title">Información</div></div>
+            <div class="card-body">
+              <div class="page-form">
+                <div class="form-group"><label>Nombre profesional</label><input id="pp-name" value="María García" oninput="updatePreview()"></div>
+                <div class="form-group"><label>Bio (max 200 caracteres)</label><textarea id="pp-bio" oninput="updatePreview()">Especialista en uñas y pestañas con 5 años de experiencia. Trabajo con productos de primera calidad.</textarea></div>
+                <div class="form-group"><label>Especialidad</label><select><option>💅 Uñas + Pestañas (mixto)</option><option>💅 Uñas</option><option>👁️ Pestañas</option></select></div>
+                <div class="form-group"><label>Ciudad</label><input value="Bahía Blanca"></div>
+                <div class="form-group"><label>Modalidad</label><select><option>Presencial</option><option>A domicilio</option><option>Ambas</option></select></div>
+                <div class="form-group"><label>Instagram</label><input value="@maria.nails.bba"></div>
+                <div class="form-group"><label>WhatsApp</label><input value="+54 9 291 555-1234"></div>
+              </div>
+              <div style="border-top:1px solid var(--border);padding-top:12px">
+                <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Mostrar precios</div><div class="toggle-desc">Los precios aparecen en tu página pública</div></div><div class="toggle on"></div></div>
+                <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Mostrar galería</div><div class="toggle-desc">Fotos de trabajos visibles para las clientas</div></div><div class="toggle on"></div></div>
+                <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Mostrar reseñas</div><div class="toggle-desc">Las reseñas aparecen en tu página</div></div><div class="toggle on"></div></div>
+              </div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary" style="flex:1" onclick="copyLink()">🔗 Copiar link</button>
+            <button class="btn btn-secondary" style="flex:1" onclick="nav('reserva',null)">👁 Ver como clienta</button>
+            <button class="btn btn-primary" style="flex:1" onclick="toast('¡Página actualizada! ✓')">Guardar cambios</button>
+          </div>
+        </div>
+        <div>
+          <div style="font-size:11px;font-weight:600;color:var(--gy-t);margin-bottom:8px;text-transform:uppercase;letter-spacing:.5px">Preview en tiempo real</div>
+          <div class="page-preview-wrap">
+            <div class="preview-cover"><div class="preview-avatar">💅</div></div>
+            <div class="preview-body">
+              <div class="preview-name" id="preview-name">María García</div>
+              <div class="preview-spec">💅 Uñas + Pestañas · Bahía Blanca</div>
+              <div class="preview-svc"><div><div class="preview-svc-name">Uñas gel color</div><div class="preview-svc-meta">60min · Seña 30%</div></div><div class="preview-svc-price">$2.000</div></div>
+              <div class="preview-svc"><div><div class="preview-svc-name">Extensión pestañas</div><div class="preview-svc-meta">90min · Seña 30%</div></div><div class="preview-svc-price">$2.600</div></div>
+              <button class="preview-book-btn" onclick="nav('reserva',null)">Reservar turno →</button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- RESERVA PUBLICA (vista clienta) -->
+    <div class="page" id="page-reserva">
+      <div class="public-page">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:16px">
+          <button class="btn btn-sm btn-secondary" onclick="nav('mipagina',null)">← Volver al panel</button>
+          <span style="font-size:12px;color:var(--gy-t);background:var(--gd-l);padding:3px 10px;border-radius:10px;border:1px solid var(--gd);color:#5D4037">Vista demo — así ve la clienta tu página</span>
+        </div>
+        <div class="pub-hero">
+          <div class="pub-avatar">💅</div>
+          <div class="pub-name">María García</div>
+          <div class="pub-spec">Especialista en uñas y pestañas · Bahía Blanca</div>
+          <div class="pub-rating">⭐⭐⭐⭐⭐ 4.8 (23 reseñas)</div>
+        </div>
+        <div class="step-bar" id="reserva-steps"></div>
+        <div class="booking-step active" id="bstep-1">
+          <div style="font-size:14px;font-weight:600;margin-bottom:12px">¿Qué servicio querés?</div>
+          <div class="svc-book-card" onclick="selectBookSvc(this,'Uñas gel color','60 min · Seña: $600','var(--pk)')"><div class="sbc-bar" style="background:var(--pk)"></div><div class="sbc-info"><div class="sbc-name">Uñas gel color</div><div class="sbc-meta">60 min · Seña: $600 (30%)</div></div><div class="sbc-price">$2.000</div></div>
+          <div class="svc-book-card" onclick="selectBookSvc(this,'Extensión pestañas clásica','90 min · Seña: $780','var(--ma)')"><div class="sbc-bar" style="background:var(--ma)"></div><div class="sbc-info"><div class="sbc-name">Extensión pestañas clásica</div><div class="sbc-meta">90 min · Seña: $780 (30%)</div></div><div class="sbc-price">$2.600</div></div>
+          <div class="svc-book-card" onclick="selectBookSvc(this,'Lifting de pestañas','60 min · Seña: $540','var(--ma)')"><div class="sbc-bar" style="background:var(--ma)"></div><div class="sbc-info"><div class="sbc-name">Lifting de pestañas</div><div class="sbc-meta">60 min · Seña: $540 (30%)</div></div><div class="sbc-price">$1.800</div></div>
+          <div class="svc-book-card" onclick="selectBookSvc(this,'Diseño de cejas','45 min · Seña: $450','var(--gd)')"><div class="sbc-bar" style="background:var(--gd)"></div><div class="sbc-info"><div class="sbc-name">Diseño de cejas</div><div class="sbc-meta">45 min · Seña: $450 (30%)</div></div><div class="sbc-price">$1.500</div></div>
+        </div>
+        <div class="booking-step" id="bstep-2">
+          <div style="font-size:14px;font-weight:600;margin-bottom:12px">Elegí fecha y hora</div>
+          <div style="background:var(--pk-l);border:1px solid var(--pk);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px"><div id="bstep-svc-name" style="flex:1;font-size:13px;font-weight:500;color:var(--pk-d)"></div><button class="btn btn-sm btn-secondary" onclick="goBookStep(1)">Cambiar</button></div>
+          <div style="font-size:12px;font-weight:600;color:var(--gy-t);margin-bottom:8px">ABRIL 2026</div>
+          <div style="display:grid;grid-template-columns:repeat(7,minmax(0,1fr));gap:2px;margin-bottom:8px">
+            <div style="text-align:center;font-size:11px;color:var(--gy-t);padding:3px;font-weight:600">Lu</div><div style="text-align:center;font-size:11px;color:var(--gy-t);padding:3px;font-weight:600">Ma</div><div style="text-align:center;font-size:11px;color:var(--gy-t);padding:3px;font-weight:600">Mi</div><div style="text-align:center;font-size:11px;color:var(--gy-t);padding:3px;font-weight:600">Ju</div><div style="text-align:center;font-size:11px;color:var(--gy-t);padding:3px;font-weight:600">Vi</div><div style="text-align:center;font-size:11px;color:var(--gy-t);padding:3px;font-weight:600">Sá</div><div style="text-align:center;font-size:11px;color:var(--gy-t);padding:3px;font-weight:600">Do</div>
+          </div>
+          <div class="mini-cal" id="mini-cal"></div>
+          <div id="time-section" style="display:none">
+            <div style="font-size:12px;font-weight:600;color:var(--gy-t);margin-bottom:8px">HORARIOS DISPONIBLES</div>
+            <div class="time-grid" id="time-grid"></div>
+          </div>
+          <button class="btn btn-primary" style="width:100%;margin-top:8px" id="btn-step2-next" disabled onclick="goBookStep(3)">Siguiente →</button>
+        </div>
+        <div class="booking-step" id="bstep-3">
+          <div style="font-size:14px;font-weight:600;margin-bottom:12px">Tus datos</div>
+          <div class="form-group"><label>Nombre completo *</label><input id="book-name" placeholder="Tu nombre y apellido"></div>
+          <div class="form-group"><label>Teléfono *</label><input id="book-phone" placeholder="+54 9 11 1234-5678" type="tel"></div>
+          <div class="form-group"><label>Email *</label><input id="book-email" placeholder="tu@email.com" type="email"></div>
+          <div class="form-group"><label>Notas para la profesional (opcional)</label><input placeholder="Diseño deseado, alergias, observaciones..."></div>
+          <div style="background:var(--gy);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--gy-t)">
+            <label style="display:flex;gap:8px;align-items:flex-start;cursor:pointer"><input type="checkbox" id="policy-check" style="margin-top:2px;flex-shrink:0"><span>Acepto la política de cancelación: si cancelo con menos de 24 horas de anticipación, <strong>pierdo la seña</strong>.</span></label>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="goBookStep(4)">Siguiente → Pagar seña</button>
+        </div>
+        <div class="booking-step" id="bstep-4">
+          <div style="font-size:14px;font-weight:600;margin-bottom:12px">Confirmá y pagá la seña</div>
+          <div class="confirm-box">
+            <div class="confirm-row"><span>Servicio</span><span id="conf-svc" style="font-weight:500"></span></div>
+            <div class="confirm-row"><span>Fecha y hora</span><span id="conf-date" style="font-weight:500"></span></div>
+            <div class="confirm-row"><span>Profesional</span><span style="font-weight:500">María García</span></div>
+            <div class="confirm-row"><span>Precio total</span><span id="conf-price"></span></div>
+            <div class="confirm-row" style="color:var(--pk)"><span>Seña a pagar ahora</span><span id="conf-seña" style="font-size:18px;color:var(--pk)"></span></div>
+          </div>
+          <div style="font-size:13px;font-weight:500;color:var(--gy-t);margin-bottom:10px">Elegí cómo pagar:</div>
+          <div class="payment-methods">
+            <div class="pay-method" onclick="completeBooking('MercadoPago')"><div class="pay-method-icon">📱</div><div class="pay-method-info"><div class="pay-method-name">MercadoPago</div><div class="pay-method-desc">Pagá con tu saldo o tarjeta en MercadoPago</div></div></div>
+            <div class="pay-method" onclick="completeBooking('Stripe')"><div class="pay-method-icon">💳</div><div class="pay-method-info"><div class="pay-method-name">Tarjeta de crédito/débito</div><div class="pay-method-desc">Visa, Mastercard, Amex — procesado por Stripe</div></div></div>
+          </div>
+        </div>
+        <div class="booking-step" id="bstep-5">
+          <div class="success-page">
+            <div class="success-icon">✅</div>
+            <div class="success-title">¡Turno confirmado!</div>
+            <div class="success-sub">Vas a recibir un recordatorio por WhatsApp antes del turno.</div>
+            <div class="success-card">
+              <div class="confirm-row" style="border-bottom:none;margin-bottom:6px;font-size:13px"><span style="color:var(--pk-d)">Servicio</span><span id="success-svc" style="font-weight:500;color:var(--pk-d)"></span></div>
+              <div class="confirm-row" style="border-bottom:none;margin-bottom:6px;font-size:13px"><span style="color:var(--pk-d)">Fecha y hora</span><span id="success-date" style="font-weight:500;color:var(--pk-d)"></span></div>
+              <div style="font-size:12px;color:var(--pk-d);margin-top:6px;text-align:center">Seña pagada: <strong id="success-seña"></strong></div>
+            </div>
+            <button class="btn btn-secondary" style="width:100%;margin-bottom:8px" onclick="toast('Archivo .ics descargado')">📅 Agregar al calendario</button>
+            <button class="btn btn-primary" style="width:100%" onclick="goBookStep(1)">Reservar otro turno</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CONFIGURACION -->
+    <div class="page" id="page-configuracion">
+      <div id="config-hub-view">
+        <div style="font-size:16px;font-weight:600;margin-bottom:16px">Configuración</div>
+        <div class="config-grid">
+          <div class="config-card" onclick="showConfig('disponibilidad')"><div class="config-card-icon">📅</div><div class="config-card-title">Disponibilidad</div><div class="config-card-desc">Lun–Vie 09:00–19:00 · 0 fechas bloqueadas</div></div>
+          <div class="config-card" onclick="showConfig('pagos')"><div class="config-card-icon">💳</div><div class="config-card-title">Cobros y pagos</div><div class="config-card-desc">MercadoPago ✅ · Stripe ⬜ · Moneda: ARS</div></div>
+          <div class="config-card" onclick="showConfig('cuenta')"><div class="config-card-icon">👤</div><div class="config-card-title">Mi cuenta</div><div class="config-card-desc">María García · maria@gmail.com</div></div>
+          <div class="config-card" onclick="showConfig('equipo')"><div class="config-card-icon">👥</div><div class="config-card-title">Equipo</div><div class="config-card-desc" style="color:var(--pk);font-weight:500">Requiere Plan Studio →</div></div>
+          <div class="config-card" onclick="showConfig('plan')"><div class="config-card-icon">⭐</div><div class="config-card-title">Plan y facturación</div><div class="config-card-desc">Plan Pro — $49/mes · Próx. cobro: 1 mayo</div></div>
+          <div class="config-card" onclick="showConfig('notif')"><div class="config-card-icon">🔔</div><div class="config-card-title">Notificaciones</div><div class="config-card-desc">Email + WhatsApp · Todo activo</div></div>
+        </div>
+      </div>
+      <div id="config-disponibilidad-view" class="config-section">
+        <div class="back-link" onclick="showConfig('hub')">← Volver a configuración</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:16px">Disponibilidad semanal</div>
+        <div class="card" style="margin-bottom:12px"><div class="card-body" id="avail-days-container"></div></div>
+        <button class="btn btn-primary" style="width:100%" onclick="toast('Disponibilidad guardada ✓')">Guardar horario</button>
+      </div>
+      <div id="config-pagos-view" class="config-section">
+        <div class="back-link" onclick="showConfig('hub')">← Volver a configuración</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:16px">Cobros y pagos</div>
+        <div class="form-group"><label>Moneda</label><select onchange="toast('Moneda actualizada ✓')"><option>ARS — Peso argentino ($)</option><option>USD — Dólar estadounidense (US$)</option><option>MXN — Peso mexicano ($)</option><option>COP — Peso colombiano ($)</option><option>BRL — Real brasileño (R$)</option><option>EUR — Euro (€)</option></select></div>
+        <div class="payment-block"><div class="payment-block-header"><div class="payment-logo" style="background:#009ee3">MP</div><div class="payment-name">MercadoPago</div><div class="connected-pill">✓ Conectado</div></div><div style="font-size:12px;color:var(--gy-t)">Cuenta: maria.garcia@gmail.com · Recibís el dinero en tu cuenta de MP</div></div>
+        <div class="payment-block"><div class="payment-block-header"><div class="payment-logo" style="background:#635bff">St</div><div class="payment-name">Stripe</div><button class="btn btn-sm btn-secondary" onclick="toast('Redirigiendo a Stripe Connect...')">Conectar</button></div><div style="font-size:12px;color:var(--gy-t)">Para cobrar con tarjeta de crédito/débito de clientes internacionales</div></div>
+        <div class="form-group" style="margin-top:4px"><label>Política de cancelación</label><select onchange="toast('Política guardada ✓')"><option>24hs — cancelar con menos de 24hs = pierde la seña</option><option>12hs</option><option>48hs</option><option>6hs</option><option>No — siempre se devuelve</option></select></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-top:1px solid var(--border)"><div><div style="font-size:13px;font-weight:500">Requerir seña en todos mis servicios</div><div style="font-size:11px;color:var(--gy-t)">Override la configuración individual</div></div><div class="toggle on" onclick="this.classList.toggle('on')"></div></div>
+      </div>
+      <div id="config-cuenta-view" class="config-section">
+        <div class="back-link" onclick="showConfig('hub')">← Volver a configuración</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:16px">Mi cuenta</div>
+        <div style="display:flex;align-items:center;gap:14px;margin-bottom:20px;padding:16px;background:var(--gy);border-radius:var(--radius)">
+          <div style="width:64px;height:64px;border-radius:50%;background:var(--pk-l);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;color:var(--pk);flex-shrink:0">MG</div>
+          <div><div style="font-size:14px;font-weight:600">María García</div><div style="font-size:12px;color:var(--gy-t)">glowdesk.com/maria-garcia</div></div>
+          <button class="btn btn-sm btn-secondary" style="margin-left:auto" onclick="toast('Seleccioná una foto...')">Cambiar foto</button>
+        </div>
+        <div class="form-group"><label>Nombre completo</label><input value="María García"></div>
+        <div class="form-group"><label>Email</label><input value="maria@gmail.com" type="email"></div>
+        <div class="form-group"><label>Teléfono</label><input value="+54 9 291 555-1234" type="tel"></div>
+        <div class="form-group"><label>Ciudad y país</label><input value="Bahía Blanca, Argentina"></div>
+        <div class="form-group"><label>Idioma de la app</label><select onchange="toast('Idioma actualizado ✓')"><option>🇦🇷 Español</option><option>🇺🇸 English</option><option>🇧🇷 Português</option></select></div>
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-top:1px solid var(--border);border-bottom:1px solid var(--border);margin-bottom:14px"><div><div style="font-size:13px;font-weight:500">Modo oscuro</div><div style="font-size:11px;color:var(--gy-t)">Cambiar la apariencia de la app</div></div><div class="toggle" onclick="this.classList.toggle('on')"></div></div>
+        <button class="btn btn-primary" style="width:100%;margin-bottom:8px" onclick="toast('Perfil actualizado ✓')">Guardar cambios</button>
+        <div style="font-size:14px;font-weight:600;margin:16px 0 10px">Cambiar contraseña</div>
+        <div class="form-group"><label>Nueva contraseña</label><input type="password" placeholder="Mínimo 8 caracteres"></div>
+        <div class="form-group"><label>Confirmar contraseña</label><input type="password" placeholder="Repetí la contraseña"></div>
+        <button class="btn btn-secondary" onclick="toast('Contraseña actualizada ✓')">Cambiar contraseña</button>
+      </div>
+      <div id="config-equipo-view" class="config-section">
+        <div class="back-link" onclick="showConfig('hub')">← Volver a configuración</div>
+        <div style="background:var(--ma-l);border:1px solid var(--ma);border-radius:var(--radius);padding:20px;text-align:center">
+          <div style="font-size:36px;margin-bottom:10px">👥</div>
+          <div style="font-size:15px;font-weight:600;margin-bottom:6px">Plan Studio — $79/mes</div>
+          <div style="font-size:13px;color:var(--gy-t);margin-bottom:16px">Esta función requiere el Plan Studio</div>
+          <div style="text-align:left;background:var(--surface);border-radius:var(--radius-sm);padding:12px;margin-bottom:16px">
+            <div style="font-size:12px;margin-bottom:6px;color:#1A1A2E">✓ Hasta 3 colaboradoras con acceso a su propia agenda</div>
+            <div style="font-size:12px;margin-bottom:6px;color:#1A1A2E">✓ Rol de asistente (solo gestiona el calendario)</div>
+            <div style="font-size:12px;margin-bottom:6px;color:#1A1A2E">✓ Dashboard consolidado del equipo</div>
+            <div style="font-size:12px;color:#1A1A2E">✓ Directorio en el marketplace GlowDesk</div>
+          </div>
+          <button class="btn btn-primary" style="width:100%" onclick="toast('Redirigiendo a Stripe...')">Actualizar al Plan Studio</button>
+        </div>
+      </div>
+      <div id="config-plan-view" class="config-section">
+        <div class="back-link" onclick="showConfig('hub')">← Volver a configuración</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:16px">Plan y facturación</div>
+        <div style="background:var(--ma-l);border:1px solid var(--ma);border-radius:var(--radius);padding:14px;margin-bottom:16px"><div style="font-size:11px;color:var(--ma);font-weight:600;margin-bottom:2px">PLAN ACTUAL</div><div style="font-size:18px;font-weight:700">Plan Pro — $49/mes</div><div style="font-size:12px;color:var(--gy-t)">Próximo cobro: 1 de mayo de 2026</div></div>
+        <div class="plan-cards">
+          <div class="plan-card"><div class="plan-name">Básico</div><div class="plan-price">$29</div><div class="plan-period">/mes</div><ul class="plan-features"><li>✓ Agenda online</li><li>✓ Seña digital</li><li>✓ Mini-web</li><li>✓ 50 clientas</li></ul><button class="btn btn-sm btn-secondary" style="width:100%" onclick="toast('Cambiando al Plan Básico...')">Cambiar</button></div>
+          <div class="plan-card current"><div style="font-size:10px;background:var(--pk);color:#fff;border-radius:8px;padding:2px 8px;display:inline-block;margin-bottom:6px">Plan actual</div><div class="plan-name">Pro</div><div class="plan-price">$49</div><div class="plan-period">/mes</div><ul class="plan-features"><li>✓ CRM ilimitado</li><li>✓ Recordatorio IA</li><li>✓ Contenido IG</li><li>✓ Analytics</li></ul></div>
+          <div class="plan-card recommended"><div style="font-size:10px;background:var(--ma);color:#fff;border-radius:8px;padding:2px 8px;display:inline-block;margin-bottom:6px">Más funciones</div><div class="plan-name">Studio</div><div class="plan-price">$79</div><div class="plan-period">/mes</div><ul class="plan-features"><li>✓ 3 colaboradoras</li><li>✓ Roles y permisos</li><li>✓ Dashboard equipo</li><li>✓ Marketplace</li></ul><button class="btn btn-sm btn-primary" style="width:100%" onclick="toast('Redirigiendo a Stripe...')">Actualizar</button></div>
+        </div>
+      </div>
+      <div id="config-notif-view" class="config-section">
+        <div class="back-link" onclick="showConfig('hub')">← Volver a configuración</div>
+        <div style="font-size:15px;font-weight:600;margin-bottom:16px">Notificaciones</div>
+        <div class="card"><div class="card-body">
+          <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Nuevo turno confirmado</div><div class="toggle-desc">Cuando una clienta reserva y paga la seña</div></div><div class="toggle on"></div></div>
+          <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">No-show registrado</div><div class="toggle-desc">Cuando marcás un turno como no se presentó</div></div><div class="toggle on"></div></div>
+          <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Reseña nueva</div><div class="toggle-desc">Cuando una clienta te deja una reseña</div></div><div class="toggle on"></div></div>
+          <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Recordatorio de turno</div><div class="toggle-desc">WhatsApp 48hs y 2hs antes a la clienta</div></div><div class="toggle on"></div></div>
+          <div class="toggle-row"><div class="toggle-info"><div class="toggle-title">Alerta de mantenimiento</div><div class="toggle-desc">Cuando una clienta no vuelve en X días</div></div><div class="toggle on"></div></div>
+        </div></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+</div>
+
+<!-- MODALES -->
+<div class="modal-bg" id="checkout-modal">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title" id="co-title">Completar turno</div><button class="modal-close" onclick="closeModal('checkout-modal')">×</button></div>
+    <div class="modal-body">
+      <div style="display:flex;align-items:center;gap:12px;padding-bottom:14px;border-bottom:1px solid var(--border);margin-bottom:14px">
+        <div class="avatar" id="co-avatar" style="width:44px;height:44px;font-size:15px;background:var(--pk-l);color:var(--pk)">VL</div>
+        <div><div style="font-size:14px;font-weight:600" id="co-client"></div><div style="font-size:12px;color:var(--gy-t)" id="co-service"></div></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:13px;margin-bottom:8px"><span style="color:var(--gy-t)">Seña cobrada</span><span style="color:var(--gr);font-weight:600" id="co-deposit"></span></div>
+      <div class="amount-hero"><div class="amount-hero-label">Saldo a cobrar ahora</div><div class="amount-hero-value" id="co-remaining"></div></div>
+      <div style="font-size:13px;font-weight:500;color:var(--gy-t);margin-bottom:10px">Cobrar con:</div>
+      <div class="checkout-method" onclick="completeCheckout('MercadoPago QR')"><div class="checkout-method-icon">📱</div><div><div style="font-size:13px;font-weight:500">MercadoPago — QR</div><div style="font-size:11px;color:var(--gy-t)">La clienta escanea el QR ahí mismo</div></div></div>
+      <div class="checkout-method" onclick="completeCheckout('Link de pago')"><div class="checkout-method-icon">🔗</div><div><div style="font-size:13px;font-weight:500">Generar link de pago</div><div style="font-size:11px;color:var(--gy-t)">Copiás el link y se lo mandás por WhatsApp</div></div></div>
+      <div class="checkout-method" onclick="completeCheckout('Efectivo')"><div class="checkout-method-icon">💵</div><div><div style="font-size:13px;font-weight:500">Efectivo</div><div style="font-size:11px;color:var(--gy-t)">Registrar cobro en efectivo</div></div></div>
+      <div class="checkout-method" onclick="completeCheckout('Transferencia')"><div class="checkout-method-icon">🏦</div><div><div style="font-size:13px;font-weight:500">Transferencia</div><div style="font-size:11px;color:var(--gy-t)">Registrar transferencia manual</div></div></div>
+    </div>
+  </div>
+</div>
+
+<div class="modal-bg" id="newappt-modal">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Nuevo turno</div><button class="modal-close" onclick="closeModal('newappt-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Clienta</label><input list="cl-list" placeholder="Buscar clienta..."><datalist id="cl-list"><option>Valentina López</option><option>Camila Ruiz</option><option>Sofía Martínez</option><option>Lucía Fernández</option><option>Ana Pérez</option></datalist></div>
+      <div class="form-group"><label>Servicio</label><select><option>Uñas gel color — 60min — $2.000</option><option>Extensión pestañas clásica — 90min — $2.600</option><option>Lifting de pestañas — 60min — $1.800</option><option>Diseño de cejas — 45min — $1.500</option><option>Limpieza facial — 60min — $1.250</option></select></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>Fecha</label><input type="date" value="2026-04-14"></div>
+        <div class="form-group"><label>Hora</label><select><option>09:00</option><option>09:30</option><option>10:00</option><option>10:30</option><option>11:00</option><option>14:00</option><option>14:30</option><option>15:00</option><option>16:00</option></select></div>
+      </div>
+      <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0">
+        <div><div style="font-size:13px;font-weight:500">Requiere seña</div><div style="font-size:11px;color:var(--gy-t)">30% del servicio</div></div>
+        <div class="toggle on" onclick="this.classList.toggle('on')"></div>
+      </div>
+      <div class="form-group"><label>Notas internas (no la ve la clienta)</label><input placeholder="Observaciones del turno..."></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal('newappt-modal')">Cancelar</button><button class="btn btn-primary" onclick="saveAppt()">Guardar turno</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="newclient-modal">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Nueva clienta</div><button class="modal-close" onclick="closeModal('newclient-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="form-group"><label>Nombre completo *</label><input id="nc-name" placeholder="Nombre y apellido"></div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>Teléfono</label><input id="nc-phone" placeholder="+54 9 11..." type="tel"></div>
+        <div class="form-group"><label>Email</label><input placeholder="email@ejemplo.com" type="email"></div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group"><label>Etiqueta</label><select id="nc-tag"><option value="nueva">Nueva</option><option value="regular">Regular</option><option value="vip">VIP</option></select></div>
+        <div class="form-group"><label>Idioma</label><select><option>Español</option><option>English</option><option>Português</option></select></div>
+      </div>
+      <div class="form-group"><label>Notas privadas</label><textarea style="height:64px;resize:none" placeholder="Preferencias, alergias, observaciones..."></textarea></div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal('newclient-modal')">Cancelar</button><button class="btn btn-primary" onclick="saveNewClient()">Guardar clienta</button></div>
+  </div>
+</div>
+
+<div class="modal-bg" id="service-modal">
+  <div class="modal">
+    <div class="modal-head"><div class="modal-title">Agregar servicio</div><button class="modal-close" onclick="closeModal('service-modal')">×</button></div>
+    <div class="modal-body">
+      <div class="tabs" style="margin-bottom:16px">
+        <div class="tab active" onclick="showSvcTab('general',this)">General</div>
+        <div class="tab" onclick="showSvcTab('traducciones',this)">Traducciones</div>
+        <div class="tab" onclick="showSvcTab('config',this)">Configuración</div>
+      </div>
+      <div class="tab-panel active" id="svctab-general">
+        <div class="form-group"><label>Nombre del servicio *</label><input placeholder="Ej: Uñas gel color"></div>
+        <div class="form-group"><label>Descripción (opcional)</label><input placeholder="Descripción breve del servicio..."></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label>Duración</label><select><option>15 min</option><option>30 min</option><option>45 min</option><option selected>60 min</option><option>75 min</option><option>90 min</option><option>120 min</option><option>150 min</option><option>180 min</option></select></div>
+          <div class="form-group"><label>Precio ($)</label><input type="number" placeholder="0" min="0"></div>
+        </div>
+        <div class="form-group"><label>Color en el calendario</label>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px">
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--pk);cursor:pointer;border:3px solid var(--pk);box-shadow:0 0 0 2px #fff,0 0 0 4px var(--pk)" onclick="selectSvcColor(this,'--pk')"></div>
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--ma);cursor:pointer;border:3px solid transparent" onclick="selectSvcColor(this,'--ma')"></div>
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--gd);cursor:pointer;border:3px solid transparent" onclick="selectSvcColor(this,'--gd')"></div>
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--te);cursor:pointer;border:3px solid transparent" onclick="selectSvcColor(this,'--te')"></div>
+            <div style="width:28px;height:28px;border-radius:50%;background:var(--gr);cursor:pointer;border:3px solid transparent" onclick="selectSvcColor(this,'--gr')"></div>
+            <div style="width:28px;height:28px;border-radius:50%;background:#1976D2;cursor:pointer;border:3px solid transparent" onclick="selectSvcColor(this,'blue')"></div>
+          </div>
+        </div>
+      </div>
+      <div class="tab-panel" id="svctab-traducciones">
+        <div style="background:var(--gd-l);border:1px solid var(--gd);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:#5D4037;margin-bottom:14px">Si no completás las traducciones, se usará el nombre en español en la página pública para clientas en inglés o portugués.</div>
+        <div class="form-group"><label>🇺🇸 Nombre en inglés</label><input placeholder="Ej: Gel color nails"></div>
+        <div class="form-group"><label>🇺🇸 Descripción en inglés</label><input placeholder="Short description..."></div>
+        <div class="form-group"><label>🇧🇷 Nombre en portugués</label><input placeholder="Ej: Unhas gel coloridas"></div>
+        <div class="form-group"><label>🇧🇷 Descripción en portugués</label><input placeholder="Descrição breve..."></div>
+      </div>
+      <div class="tab-panel" id="svctab-config">
+        <div style="display:flex;align-items:center;justify-content:space-between;padding:12px 0;border-bottom:1px solid var(--border);margin-bottom:12px">
+          <div><div style="font-size:13px;font-weight:500">Requiere seña</div><div style="font-size:11px;color:var(--gy-t)">La clienta paga un porcentaje al reservar</div></div>
+          <div class="toggle on" id="svc-deposit-toggle" onclick="this.classList.toggle('on')"></div>
+        </div>
+        <div class="form-group"><label>Porcentaje de seña</label><select><option>10%</option><option>20%</option><option selected>30%</option><option>40%</option><option>50%</option><option>100% — seña total</option></select></div>
+        <div class="form-group"><label>Días de mantenimiento</label><input type="number" value="21" min="1" max="365" id="maint-days" oninput="updateMaintPreview()"></div>
+        <div id="maint-preview" style="background:var(--gy);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--gy-t)">El sistema le enviará un recordatorio a la clienta a los 21 días del turno: "Hola! Ya se acercan los 21 días de tus uñas 💅 ¿Querés reservar tu próximo turno?"</div>
+      </div>
+    </div>
+    <div class="modal-foot"><button class="btn btn-secondary" onclick="closeModal('service-modal')">Cancelar</button><button class="btn btn-primary" onclick="saveService()">Guardar servicio</button></div>
+  </div>
+</div>
+
+<div class="toast" id="toast-el"></div>
+
+<script>
+const CLIENTS_DATA = [
+  {id:1,name:'Valentina López',phone:'+54 9 291 444-1111',email:'vale@gmail.com',tag:'vip',visits:24,spent:'$52.800',lastSvc:'Uñas gel color',lastDate:'10 abr',maint:'En 11 días',maintCls:'maint-ok',ini:'VL',bg:'var(--pk-l)',color:'var(--pk)',history:[{d:'10 abr 2026',s:'Uñas gel color',a:'$2.000',color:'var(--pk)'},{d:'20 mar 2026',s:'Uñas gel nude',a:'$1.800',color:'var(--pk)'},{d:'28 feb 2026',s:'Uñas gel color',a:'$1.900',color:'var(--pk)'}]},
+  {id:2,name:'Camila Ruiz',phone:'+54 9 291 444-2222',email:'cami@gmail.com',tag:'regular',visits:12,spent:'$31.200',lastSvc:'Extensión pestañas clásica',lastDate:'7 abr',maint:'En 14 días',maintCls:'maint-ok',ini:'CR',bg:'var(--ma-l)',color:'var(--ma)',history:[{d:'7 abr 2026',s:'Extensión pestañas clásica',a:'$2.600',color:'var(--ma)'},{d:'17 mar 2026',s:'Lifting de pestañas',a:'$1.800',color:'var(--ma)'}]},
+  {id:3,name:'Sofía Martínez',phone:'+54 9 291 444-3333',email:'sofi@gmail.com',tag:'nueva',visits:2,spent:'$3.000',lastSvc:'Diseño de cejas',lastDate:'3 abr',maint:'En 27 días',maintCls:'maint-ok',ini:'SM',bg:'var(--gd-l)',color:'var(--gd)',history:[{d:'3 abr 2026',s:'Diseño de cejas',a:'$1.500',color:'var(--gd)'}]},
+  {id:4,name:'Lucía Fernández',phone:'+54 9 291 444-4444',email:'luci@gmail.com',tag:'regular',visits:8,spent:'$18.500',lastSvc:'Limpieza facial',lastDate:'1 abr',maint:'Vence en 3 días',maintCls:'maint-soon',ini:'LF',bg:'var(--te-l)',color:'var(--te)',history:[{d:'1 abr 2026',s:'Limpieza facial',a:'$1.250',color:'var(--te)'},{d:'2 mar 2026',s:'Limpieza facial',a:'$1.250',color:'var(--te)'}]},
+  {id:5,name:'Ana Pérez',phone:'+54 9 291 444-5555',email:'ana@gmail.com',tag:'noshower',visits:5,spent:'$7.200',lastSvc:'Uñas gel color',lastDate:'15 mar',maint:'Vencido',maintCls:'maint-overdue',ini:'AP',bg:'var(--rd-l)',color:'var(--rd)',history:[{d:'15 mar 2026',s:'Uñas gel color',a:'$2.000',color:'var(--pk)'}]},
+];
+
+const SVCS_DATA = [
+  {id:1,name:'Uñas gel color',dur:60,price:2000,dep:30,maint:21,color:'var(--pk)',active:true},
+  {id:2,name:'Extensión pestañas clásica',dur:90,price:2600,dep:30,maint:21,color:'var(--ma)',active:true},
+  {id:3,name:'Lifting de pestañas',dur:60,price:1800,dep:30,maint:45,color:'var(--ma)',active:true},
+  {id:4,name:'Diseño de cejas',dur:45,price:1500,dep:30,maint:30,color:'var(--gd)',active:true},
+  {id:5,name:'Limpieza facial',dur:60,price:1250,dep:30,maint:30,color:'var(--te)',active:true},
+];
+
+let clientFilter = 'todas';
+let bookSvc = null, bookDate = null, bookTime = null, bookStep = 1;
+
+function nav(page, el) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  if (el) el.classList.add('active');
+  const titles = {dashboard:'Dashboard',agenda:'Agenda',clientes:'Clientes',servicios:'Servicios',ingresos:'Ingresos',resenas:'Reseñas',mipagina:'Mi Página',reserva:'Vista de reserva',configuracion:'Configuración'};
+  document.getElementById('topbar-title').textContent = titles[page] || page;
+  if (page === 'agenda') buildCal();
+  if (page === 'clientes') renderClients();
+  if (page === 'servicios') renderSvcs();
+  if (page === 'ingresos') buildChart();
+  if (page === 'reserva') { bookStep = 1; goBookStep(1); }
+  if (page === 'configuracion') showConfig('hub');
+}
+
+function buildCal() {
+  const grid = document.getElementById('cal-grid');
+  if (!grid) return;
+  const appts = [
+    {day:1,h:10,dur:2,n:'Valentina L.',s:'Uñas gel',c:'var(--pk)'},
+    {day:1,h:11,dur:3,n:'Camila R.',s:'Pestañas',c:'var(--ma)'},
+    {day:1,h:14,dur:1,n:'Sofía M.',s:'Cejas',c:'var(--gd)'},
+    {day:1,h:16,dur:2,n:'Lucía F.',s:'Facial',c:'var(--te)'},
+    {day:2,h:10,dur:2,n:'Ana P.',s:'Uñas gel',c:'var(--pk)'},
+    {day:2,h:14,dur:3,n:'Valentina L.',s:'Pestañas',c:'var(--ma)'},
+    {day:3,h:9,dur:2,n:'Camila R.',s:'Uñas gel',c:'var(--pk)'},
+    {day:4,h:11,dur:2,n:'Sofía M.',s:'Uñas gel',c:'var(--pk)'},
+    {day:4,h:15,dur:3,n:'Lucía F.',s:'Pestañas',c:'var(--ma)'},
+    {day:5,h:10,dur:2,n:'Ana P.',s:'Cejas',c:'var(--gd)'},
+    {day:5,h:15,dur:2,n:'Valentina L.',s:'Uñas gel',c:'var(--pk)'},
+  ];
+  const hours = [9,10,11,12,14,15,16,17,18];
+  const dNames = ['Lu 14','Ma 15','Mi 16','Ju 17','Vi 18','Sá 19','Do 20'];
+  let h = '<div class="cal-head"></div>';
+  dNames.forEach((d,i) => h += `<div class="cal-head ${i===0?'today':''}">${d}</div>`);
+  hours.forEach(hr => {
+    h += `<div class="cal-time">${hr}:00</div>`;
+    for (let d = 0; d < 7; d++) {
+      const a = appts.find(a => a.day === d+1 && a.h === hr);
+      let inner = '';
+      if (a) inner = `<div class="cal-appt" style="background:${a.c};height:${a.dur*32-4}px" onclick="openCheckout('${a.n}','${a.s}','$600','$1.400')" title="${a.n} — ${a.s}">${a.n}</div>`;
+      h += `<div class="cal-cell">${inner}</div>`;
+    }
+  });
+  grid.innerHTML = h;
+}
+
+function renderClients(query) {
+  const list = document.getElementById('clients-list');
+  if (!list) return;
+  let data = [...CLIENTS_DATA];
+  if (clientFilter !== 'todas') data = data.filter(c => c.tag === clientFilter);
+  if (query) data = data.filter(c => c.name.toLowerCase().includes(query.toLowerCase()) || c.phone.includes(query));
+  list.innerHTML = data.map(c => `
+    <div class="client-row" onclick="showClientDetail(${c.id})">
+      <div class="avatar" style="background:${c.bg};color:${c.color}">${c.ini}</div>
+      <div class="client-info">
+        <div class="client-name">${c.name}</div>
+        <div class="client-meta">${c.phone} · Último: ${c.lastSvc} (${c.lastDate})</div>
+      </div>
+      <span class="tag tag-${c.tag}" style="flex-shrink:0">${c.tag.charAt(0).toUpperCase()+c.tag.slice(1)}</span>
+      <span class="maint ${c.maintCls}" style="flex-shrink:0">${c.maint}</span>
+    </div>`).join('');
+}
+
+function filterClients(q) { renderClients(q); }
+
+function setClientFilter(f, el) {
+  clientFilter = f;
+  document.querySelectorAll('.filter-pill').forEach(p => p.classList.remove('active'));
+  el.classList.add('active');
+  renderClients();
+}
+
+function showClientDetail(id) {
+  const c = CLIENTS_DATA.find(x => x.id === id);
+  if (!c) return;
+  document.getElementById('clientes-list-view').style.display = 'none';
+  const d = document.getElementById('client-detail');
+  d.style.display = 'block';
+  d.innerHTML = `
+    <div class="back-link" onclick="document.getElementById('clientes-list-view').style.display='';document.getElementById('client-detail').style.display='none'">← Volver a clientes</div>
+    <div class="profile-hero">
+      <div class="avatar-xl" style="background:${c.bg};color:${c.color}">${c.ini}</div>
+      <div style="flex:1">
+        <div class="profile-name">${c.name}</div>
+        <div class="profile-meta">${c.phone} · ${c.email}</div>
+        <div class="profile-stats">
+          <div class="profile-stat"><strong>${c.visits}</strong> visitas</div>
+          <div class="profile-stat"><strong>${c.spent}</strong> gastado</div>
+          <span class="tag tag-${c.tag}">${c.tag}</span>
+        </div>
+      </div>
+      <div class="profile-actions">
+        <button class="btn btn-primary btn-sm" onclick="openModal('newappt-modal')">Agendar turno</button>
+        <a href="https://wa.me/${c.phone.replace(/\D/g,'')}" target="_blank"><button class="btn btn-secondary btn-sm">WhatsApp</button></a>
+      </div>
+    </div>
+    <div class="tabs">
+      <div class="tab active" onclick="showClientTab('info',this)">Información</div>
+      <div class="tab" onclick="showClientTab('historial',this)">Historial</div>
+      <div class="tab" onclick="showClientTab('fotos',this)">Fotos</div>
+      <div class="tab" onclick="showClientTab('pagos',this)">Pagos</div>
+    </div>
+    <div class="tab-panel active" id="ctab-info">
+      <div class="form-row"><span class="form-label">Teléfono</span><div class="editable-field" contenteditable="true" onblur="toast('Guardado ✓')">${c.phone}</div></div>
+      <div class="form-row"><span class="form-label">Email</span><div class="editable-field" contenteditable="true" onblur="toast('Guardado ✓')">${c.email}</div></div>
+      <div class="form-row"><span class="form-label">Etiqueta</span><select onchange="toast('Etiqueta actualizada ✓')" style="height:30px;border:1px solid var(--border);border-radius:var(--radius-sm);padding:0 8px;font-size:12px"><option ${c.tag==='nueva'?'selected':''}>nueva</option><option ${c.tag==='regular'?'selected':''}>regular</option><option ${c.tag==='vip'?'selected':''}>vip</option></select></div>
+      <div class="form-row"><span class="form-label">Mantenimiento</span><span class="${c.maintCls}" style="font-size:12px;padding:3px 8px;border-radius:10px;${c.maintCls==='maint-ok'?'background:var(--gr-l);color:#1B5E20':c.maintCls==='maint-soon'?'background:var(--gd-l);color:#E65100':'background:var(--rd-l);color:var(--rd)'}">${c.maint}</span></div>
+      <div style="margin-top:12px"><div class="form-label" style="margin-bottom:6px">Notas privadas (auto-guardado)</div><textarea class="editable-field" style="width:100%;min-height:80px;border:1px solid var(--border);padding:8px 10px;resize:vertical" onblur="toast('Guardado ✓')">Notas de ${c.name}: preferencias y observaciones.</textarea></div>
+    </div>
+    <div class="tab-panel" id="ctab-historial">
+      ${c.history.map(h => `<div class="history-row"><div class="history-dot" style="background:${h.color}"></div><div class="history-info"><div class="history-date">${h.d}</div><div class="history-service">${h.s}</div></div><div class="history-amount">${h.a}</div></div>`).join('')}
+    </div>
+    <div class="tab-panel" id="ctab-fotos">
+      <div class="photo-grid">
+        <div class="photo-cell">💅</div>
+        <div class="photo-cell">💅</div>
+        <div class="photo-cell" onclick="toast('Seleccioná una foto para subir...')" style="border:2px dashed var(--border);font-size:20px;color:var(--gy-t)">+</div>
+        <div class="photo-cell" onclick="toast('Seleccioná una foto para subir...')" style="border:2px dashed var(--border);font-size:20px;color:var(--gy-t)">+</div>
+      </div>
+    </div>
+    <div class="tab-panel" id="ctab-pagos">
+      <table class="income-table" style="margin-top:4px">
+        <thead><tr><th>Fecha</th><th>Tipo</th><th>Monto</th><th>Método</th><th>Estado</th></tr></thead>
+        <tbody>${c.history.map(h => `<tr><td>${h.d}</td><td>Saldo</td><td style="color:var(--gr);font-weight:600">${h.a}</td><td>Efectivo</td><td><span class="badge badge-completed">Pagado</span></td></tr>`).join('')}</tbody>
+      </table>
+    </div>`;
+}
+
+function showClientTab(tab, el) {
+  document.querySelectorAll('#client-detail .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#client-detail .tab-panel').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const tp = document.getElementById('ctab-' + tab);
+  if (tp) tp.classList.add('active');
+}
+
+function renderSvcs() {
+  const list = document.getElementById('services-list');
+  if (!list) return;
+  list.innerHTML = SVCS_DATA.map(s => `
+    <div class="service-item">
+      <div class="svc-bar" style="background:${s.color}"></div>
+      <div class="svc-info">
+        <div class="svc-name">${s.name}</div>
+        <div class="svc-meta">${s.dur}min · Seña: ${s.dep}% · Mant: ${s.maint} días</div>
+      </div>
+      <div class="svc-price">$${s.price.toLocaleString('es-AR')}</div>
+      <div class="svc-actions">
+        <button class="btn btn-secondary btn-sm" onclick="openModal('service-modal')">Editar</button>
+        <button class="btn btn-secondary btn-sm" onclick="toast('Servicio duplicado ✓')">Dup.</button>
+        <div class="toggle ${s.active?'on':''}" onclick="this.classList.toggle('on');toast(this.classList.contains(\'on\')?\'Servicio activado\':\'Servicio desactivado\')"></div>
+      </div>
+    </div>`).join('');
+}
+
+function buildChart() {
+  const el = document.getElementById('income-chart');
+  const lbl = document.getElementById('chart-labels');
+  if (!el) return;
+  const vals = [8200,6400,9100,7800,10200,8800,11400,9600,12000,8300,7600,10500,11200,9800];
+  const max = Math.max(...vals);
+  el.innerHTML = vals.map((v,i) => `<div class="bar-col"><div class="bar-rect" style="height:${Math.round(v/max*110)}px;background:var(--pk)" title="$${v.toLocaleString('es-AR')}"></div></div>`).join('');
+  if (lbl) lbl.innerHTML = vals.map((v,i) => `<span>${i+1}</span>`).join('');
+}
+
+function showConfig(section) {
+  document.querySelectorAll('#page-configuracion > div').forEach(d => { d.style.display='none'; d.classList.remove('active'); });
+  if (section === 'hub') {
+    document.getElementById('config-hub-view').style.display = 'block';
+  } else {
+    document.getElementById('config-hub-view').style.display = 'none';
+    const el = document.getElementById('config-'+section+'-view');
+    if (el) { el.style.display='block'; el.classList.add('active'); }
+    if (section === 'disponibilidad') buildAvailDays();
+  }
+}
+
+function buildAvailDays() {
+  const el = document.getElementById('avail-days-container');
+  if (!el) return;
+  const days = [{n:'Lunes',on:true},{n:'Martes',on:true},{n:'Miércoles',on:true},{n:'Jueves',on:true},{n:'Viernes',on:true},{n:'Sábado',on:false},{n:'Domingo',on:false}];
+  el.innerHTML = days.map(d => `
+    <div class="avail-row">
+      <div class="avail-day">${d.n.slice(0,3)}</div>
+      <div class="toggle ${d.on?'on':''}" onclick="this.classList.toggle('on')"></div>
+      <select class="avail-select" style="margin-left:10px"><option>09:00</option><option>08:00</option><option>10:00</option></select>
+      <span style="font-size:12px;color:var(--gy-t);margin:0 8px">—</span>
+      <select class="avail-select"><option>19:00</option><option>18:00</option><option>20:00</option></select>
+    </div>`).join('');
+}
+
+function showSvcTab(tab, el) {
+  document.querySelectorAll('#service-modal .tab').forEach(t => t.classList.remove('active'));
+  document.querySelectorAll('#service-modal .tab-panel').forEach(t => t.classList.remove('active'));
+  if (el) el.classList.add('active');
+  const tp = document.getElementById('svctab-'+tab);
+  if (tp) tp.classList.add('active');
+}
+
+function selectSvcColor(el, color) {
+  document.querySelectorAll('#svctab-general div[style*="border-radius:50%"]').forEach(d => d.style.boxShadow='none');
+  el.style.boxShadow = '0 0 0 2px #fff, 0 0 0 4px ' + getComputedStyle(document.documentElement).getPropertyValue('--pk').trim();
+}
+
+function updateMaintPreview() {
+  const days = document.getElementById('maint-days')?.value || 21;
+  const el = document.getElementById('maint-preview');
+  if (el) el.textContent = `El sistema le enviará un recordatorio a la clienta a los ${days} días del turno: "Hola! Ya se acercan los ${days} días de tus uñas 💅 ¿Querés reservar?"`;
+}
+
+function openModal(id) { document.getElementById(id).classList.add('open'); }
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function openCheckout(client, service, deposit, remaining) {
+  document.getElementById('co-title').textContent = 'Completar turno — ' + client;
+  document.getElementById('co-client').textContent = client;
+  document.getElementById('co-service').textContent = service;
+  document.getElementById('co-avatar').textContent = client.split(' ').map(w=>w[0]).join('').slice(0,2);
+  document.getElementById('co-deposit').textContent = deposit + ' cobrado ✓';
+  document.getElementById('co-remaining').textContent = remaining;
+  openModal('checkout-modal');
+}
+
+function completeCheckout(method) {
+  closeModal('checkout-modal');
+  toast('Turno completado · ' + method + ' registrado 🎉');
+}
+
+function saveAppt() { closeModal('newappt-modal'); toast('Turno guardado ✓'); }
+
+function saveNewClient() {
+  const name = document.getElementById('nc-name').value || 'Nueva clienta';
+  closeModal('newclient-modal');
+  toast('Clienta ' + name + ' guardada ✓');
+  document.getElementById('nc-name').value = '';
+  document.getElementById('nc-phone').value = '';
+}
+
+function saveService() { closeModal('service-modal'); toast('Servicio guardado ✓'); }
+
+function globalSearch(q) {
+  if (q.length < 2) return;
+  const matches = CLIENTS_DATA.filter(c => c.name.toLowerCase().includes(q.toLowerCase()));
+  if (matches.length) toast('Encontrado: ' + matches[0].name + ' — click en Clientes para ver');
+}
+
+function updatePreview() {
+  const n = document.getElementById('pp-name')?.value;
+  const el = document.getElementById('preview-name');
+  if (n && el) el.textContent = n;
+}
+
+function copyLink() { toast('¡Link copiado! glowdesk.com/maria-garcia 🔗'); }
+
+function toggleNotif() {
+  const dd = document.getElementById('notif-dd');
+  dd.classList.toggle('open');
+  document.querySelector('.notif-badge').textContent = '0';
+}
+
+document.addEventListener('click', e => {
+  const dd = document.getElementById('notif-dd');
+  if (!e.target.closest('.topbar-btn') && dd.classList.contains('open')) dd.classList.remove('open');
+});
+
+const LANGS = ['ES','EN','PT'];
+let langIdx = 0;
+function cycleLang() {
+  langIdx = (langIdx+1) % 3;
+  document.getElementById('lang-label').textContent = LANGS[langIdx];
+  const msgs = {ES:'Idioma cambiado a Español 🇦🇷',EN:'Language changed to English 🇺🇸',PT:'Idioma alterado para Português 🇧🇷'};
+  toast(msgs[LANGS[langIdx]]);
+}
+
+function toast(msg) {
+  const el = document.getElementById('toast-el');
+  el.textContent = msg;
+  el.classList.add('show');
+  clearTimeout(el._t);
+  el._t = setTimeout(() => el.classList.remove('show'), 3200);
+}
+
+function goBookStep(n) {
+  bookStep = n;
+  document.querySelectorAll('.booking-step').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById('bstep-' + n);
+  if (el) el.classList.add('active');
+  if (n === 2) buildMiniCal();
+  if (n === 4) fillConfirm();
+  if (n === 5) fillSuccess();
+  renderStepBar(n);
+}
+
+function renderStepBar(current) {
+  const el = document.getElementById('reserva-steps');
+  if (!el) return;
+  const steps = ['Servicio','Fecha','Datos','Pago'];
+  let h = '';
+  steps.forEach((s, i) => {
+    const n = i+1;
+    const cls = n < current ? 'done' : n === current ? 'active' : '';
+    h += `<div class="step-dot ${cls}">${n < current ? '✓' : n}</div>`;
+    if (i < steps.length-1) h += `<div class="step-line ${n < current ? 'done' : ''}"></div>`;
+  });
+  el.innerHTML = h;
+}
+
+function selectBookSvc(el, name, meta, color) {
+  document.querySelectorAll('.svc-book-card').forEach(c => c.classList.remove('selected'));
+  el.classList.add('selected');
+  bookSvc = {name, meta, color};
+  setTimeout(() => goBookStep(2), 350);
+}
+
+function buildMiniCal() {
+  const mc = document.getElementById('mini-cal');
+  if (!mc || !bookSvc) return;
+  const sn = document.getElementById('bstep-svc-name');
+  if (sn) sn.textContent = bookSvc.name + ' · ' + bookSvc.meta;
+  const today = 14;
+  let h = '';
+  for (let d = 1; d <= 30; d++) {
+    const isDisabled = d < today;
+    const isSel = d === bookDate;
+    h += `<div class="mini-cal-day ${isDisabled?'disabled':isSel?'selected':'avail'}" onclick="${isDisabled?'':('selectBookDate(this,'+d+')')}">${d}</div>`;
+  }
+  mc.innerHTML = h;
+  document.getElementById('time-section').style.display = 'none';
+  document.getElementById('btn-step2-next').disabled = true;
+}
+
+function selectBookDate(el, d) {
+  document.querySelectorAll('.mini-cal-day').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  bookDate = d;
+  buildTimeSlots();
+}
+
+function buildTimeSlots() {
+  const sec = document.getElementById('time-section');
+  const grid = document.getElementById('time-grid');
+  if (!sec || !grid) return;
+  sec.style.display = 'block';
+  const times = ['09:00','09:30','10:00','10:30','11:00','11:30','14:00','14:30','15:00','15:30','16:00','17:00'];
+  const occupied = ['10:00','11:30'];
+  grid.innerHTML = times.map(t => `<div class="time-btn ${occupied.includes(t)?'occupied':t===bookTime?'selected':''}" onclick="${occupied.includes(t)?'':'selectBookTime(this,\''+t+'\')'}">${t}</div>`).join('');
+}
+
+function selectBookTime(el, t) {
+  document.querySelectorAll('.time-btn').forEach(x => x.classList.remove('selected'));
+  el.classList.add('selected');
+  bookTime = t;
+  document.getElementById('btn-step2-next').disabled = false;
+}
+
+function fillConfirm() {
+  if (!bookSvc) return;
+  const price = bookSvc.meta.split('·')[0].trim().replace('Seña: ','$').replace(' min','');
+  document.getElementById('conf-svc').textContent = bookSvc.name;
+  document.getElementById('conf-date').textContent = 'Lunes ' + (bookDate||14) + ' de abril · ' + (bookTime||'10:00');
+  document.getElementById('conf-price').textContent = bookSvc.meta.split('·')[1]?.replace('Seña:','').trim().split(' ')[0] || '$2.000';
+  document.getElementById('conf-seña').textContent = bookSvc.meta.match(/\$[\d.]+/)?.[0] || '$600';
+}
+
+function fillSuccess() {
+  if (!bookSvc) return;
+  document.getElementById('success-svc').textContent = bookSvc.name;
+  document.getElementById('success-date').textContent = 'Lunes ' + (bookDate||14) + ' de abril · ' + (bookTime||'10:00');
+  document.getElementById('success-seña').textContent = bookSvc.meta.match(/\$[\d.]+/)?.[0] || '$600';
+}
+
+function completeBooking(method) {
+  toast('Procesando pago con ' + method + '...');
+  setTimeout(() => { toast('¡Pago confirmado! Turno reservado ✓'); goBookStep(5); }, 1500);
+}
+
+nav('dashboard', document.querySelector('.nav-item'));
+</script>
+</body>
+</html>
